@@ -1,0 +1,30 @@
+apiVersion: oci.oraclecloud.com/v1beta1
+kind: OCINodeClass
+metadata:
+  name: ${name}
+spec:
+%{ if length(shape_configs_yaml) > 2 ~}
+  shapeConfigs: ${indent(4, shape_configs_yaml)}
+%{ endif ~}
+  volumeConfig:
+    bootVolumeConfig:
+      imageConfig:
+        imageType: ${image_type}
+%{ if image_id != null ~}
+        imageId: ${image_id}
+%{ else ~}
+        imageFilter:
+%{ if os_filter != null ~}
+          osFilter: ${os_filter}
+%{ endif ~}
+%{ if os_version_filter != null ~}
+          osVersionFilter: ${os_version_filter}
+%{ endif ~}
+%{ endif ~}
+  networkConfig:
+    primaryVnicConfig:
+      subnetConfig:
+        subnetId: ${primary_subnet_id}
+%{ if length(secondary_vnic_yaml) > 2 ~}
+    secondaryVnicConfigs: ${indent(6, secondary_vnic_yaml)}
+%{ endif ~}
