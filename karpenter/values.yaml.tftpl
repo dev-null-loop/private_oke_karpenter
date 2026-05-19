@@ -3,4 +3,5 @@ settings:
   vcnCompartmentId: "${vcn_compartment_id}"
   apiserverEndpoint: "${apiserver_endpoint}"
   ociVcnIpNative: ${oci_vcn_ip_native}
-  ipFamilies: ${ip_families_yaml}
+  ipFamilies:
+${indent(4, ip_families_yaml)}

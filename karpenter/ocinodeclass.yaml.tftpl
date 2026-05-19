@@ -4,7 +4,8 @@ metadata:
   name: ${name}
 spec:
 %{ if length(shape_configs_yaml) > 2 ~}
-  shapeConfigs: ${indent(4, shape_configs_yaml)}
+  shapeConfigs:
+${indent(4, shape_configs_yaml)}
 %{ endif ~}
   volumeConfig:
     bootVolumeConfig:
@@ -26,5 +27,6 @@ spec:
       subnetConfig:
         subnetId: ${primary_subnet_id}
 %{ if length(secondary_vnic_yaml) > 2 ~}
-    secondaryVnicConfigs: ${indent(6, secondary_vnic_yaml)}
+    secondaryVnicConfigs:
+${indent(6, secondary_vnic_yaml)}
 %{ endif ~}
