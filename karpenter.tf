@@ -1,9 +1,7 @@
 locals {
-  karpenter_enabled = var.karpenter.enabled
-
+  karpenter_enabled                = var.karpenter.enabled
   karpenter_cluster_compartment_id = try(var.compartment_ids[var.karpenter.cluster_compartment_name], null)
   karpenter_vcn_compartment_id     = try(var.compartment_ids[var.karpenter.vcn_compartment_name], null)
-
   karpenter_apiserver_endpoint = try(
     module.clusters[var.karpenter.cluster_name].endpoints[0].private_endpoint,
     module.clusters[var.karpenter.cluster_name].endpoints[0].kubernetes,

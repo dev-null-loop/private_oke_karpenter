@@ -7,6 +7,10 @@ variable "user_ocid" {}
 variable "fingerprint" {}
 variable "private_key_path" {}
 variable "region" {}
+variable "home_region" {
+  description = "OCI tenancy home region, required for IAM create/update/delete operations."
+  type        = string
+}
 variable "compartment_ids" {
   type = map(string)
 }
@@ -63,16 +67,16 @@ variable "security_lists" {
       destination      = string
       destination_type = string
       tcp_options = optional(object({
-        min = number
-        max = number
+	min = number
+	max = number
       }))
       udp_options = optional(object({
-        min = number
-        max = number
+	min = number
+	max = number
       }))
       icmp_options = optional(object({
-        type = number
-        code = number
+	type = number
+	code = number
       }))
     }))
     ingress_rules = list(object({
@@ -82,16 +86,16 @@ variable "security_lists" {
       source_type = string
 
       tcp_options = optional(object({
-        min = number
-        max = number
+	min = number
+	max = number
       }))
       udp_options = optional(object({
-        min = number
-        max = number
+	min = number
+	max = number
       }))
       icmp_options = optional(object({
-        type = number
-        code = number
+	type = number
+	code = number
       }))
     }))
   }))
