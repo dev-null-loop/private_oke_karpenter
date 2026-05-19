@@ -12,7 +12,15 @@ variable "karpenter" {
     ip_families              = optional(list(string), ["IPv4"])
     install_via_bastion      = optional(bool, true)
     bastion_instance_name    = optional(string, "bastion")
-    node_pool_name           = string
+    bastion_kubeconfig_iam = optional(object({
+      enabled                  = optional(bool, true)
+      bastion_compartment_name = optional(string)
+      dynamic_group_name       = optional(string, "kubeconfig_bastion")
+      policy_name              = optional(string, "kubeconfig_bastion_cluster")
+      matching_rule            = optional(string)
+      manage_cluster_family    = optional(bool, true)
+    }), {})
+    node_pool_name = string
     iam = optional(object({
       enabled                     = optional(bool, true)
       policy_compartment_name     = optional(string)
@@ -73,7 +81,10 @@ variable "karpenter" {
     cluster_compartment_name = "dev"
     vcn_compartment_name     = "dev"
     oci_vcn_ip_native        = true
-    node_pool_name           = "n"
+    bastion_kubeconfig_iam = {
+      enabled = true
+    }
+    node_pool_name = "n"
     iam = {
       enabled = true
     }

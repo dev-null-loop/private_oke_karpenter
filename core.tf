@@ -66,12 +66,13 @@ module "sn" {
 }
 
 module "vm" {
-  source              = "git@github.com:dev-null-loop/oci_core//instance"
-  for_each            = var.instances
-  availability_domain = each.value.availability_domain
-  compartment_id      = var.compartment_ids[each.value.compartment_name]
-  tenancy_ocid        = var.tenancy_ocid
-  agent_config        = each.value.agent_config
+  source                     = "git@github.com:dev-null-loop/oci_core//instance"
+  for_each                   = var.instances
+  availability_domain        = each.value.availability_domain
+  compartment_id             = var.compartment_ids[each.value.compartment_name]
+  tenancy_ocid               = var.tenancy_ocid
+  agent_config               = each.value.agent_config
+  enable_vnic_lookup_outputs = false
   create_vnic_details = {
     assign_public_ip       = each.value.create_vnic_details.assign_public_ip
     defined_tags           = each.value.create_vnic_details.defined_tags
@@ -102,6 +103,7 @@ module "vm" {
 	try(v.vars, {}),
 	{
 	  filename                       = try(v.vars.filename, null)
+	  kubeconfig_content             = try(module.kubeconfig[each.value.managed_cluster].kubeconfig_instance_principal, null)
 	  subnet_id                      = try(module.clusters[each.value.managed_cluster].service_lb_subnet_ids[0], null)
 	  cluster_compartment_id         = try(local.karpenter_cluster_compartment_id, null)
 	  vcn_compartment_id             = try(local.karpenter_vcn_compartment_id, null)

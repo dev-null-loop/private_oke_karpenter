@@ -90,6 +90,26 @@ Allow dynamic-group <domain-name>/<dynamic-group-name> to {CLUSTER_JOIN} in comp
 - For issue #25 reproduction, use OCI VCN-native pod networking and expose the secondary-VNIC tuning knobs through the `karpenter` variables.
 - For long-term KPO operation with secondary VNICs, separate node and pod subnets are usually safer than reusing the same subnet, because IP fragmentation can cause NativePodNetwork failures even when total free IP count looks high.
 
+## Issue #25 Repro Note
+
+The current default repro-oriented settings are intentionally capable of reproducing the issue-25 failure pattern:
+
+- `oci_vcn_ip_native = true`
+- `use_same_node_and_pod_subnet = true`
+- `secondary_vnic_ip_count = 32`
+- a relatively small shared node/pod subnet
+
+In that mode, OCI Karpenter can successfully launch instances and create `NodeClaim` objects, but the nodes may still fail to register if OCI Native Pod Network cannot allocate a contiguous IPv4 flexible CIDR block for pod IPs.
+
+The key live signal is usually:
+
+```text
+CreatePrivateIPFailed
+Unable to create IPv4 Flexible Cidr: Not enough capacity for allocating cidr of length 27
+```
+
+This means the stack is reproducing the same class of problem as GitHub issue #25: aggregate free IP count may still exist, but the subnet does not have enough contiguous address space for the requested secondary-VNIC pod allocation.
+
 ## Files
 
 - `karpenter.tf`: rendered file outputs and helper commands

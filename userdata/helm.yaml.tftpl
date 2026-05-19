@@ -20,21 +20,22 @@ packages:
   - oracle-olcne-release-el9
   - helm
   - yq
+write_files:
+  - path: /var/tmp/kubeconfig
+    permissions: "0600"
+    content: |
+      ${replace(chomp(kubeconfig_content), "\n", "\n      ")}
+  - path: /var/tmp/opc-bash-profile
+    content: |
+      alias k="kubectl"
+      alias kg="kubectl get"
+      alias kgp="kubectl get pods"
 runcmd:
-  - mkdir /home/opc/.kube
+  - mkdir -p /home/opc/.kube
   - echo "Created ~/.kube directory..."
-  - mv /var/lib/cloud/instance/scripts/${filename} /home/opc/.kube/config
-  - echo "Moved ${filename} to ~/.kube directory..."
+  - touch /home/opc/.bash_profile
+  - cat /var/tmp/opc-bash-profile >> /home/opc/.bash_profile
+  - mv /var/tmp/kubeconfig /home/opc/.kube/config
+  - echo "Moved kubeconfig to ~/.kube/config..."
   - chown -R opc:opc /home/opc # because https://bugs.launchpad.net/cloud-init/+bug/1231541
   - chmod 600 /home/opc/.kube/config
-  - export KUBECONFIG=/home/opc/.kube/config
-  - [ dnf, install, -y, "https://github.com/derailed/k9s/releases/download/v0.50.9/k9s_linux_amd64.rpm" ]
-  - [ helm, repo, list ]
-write_files:
-- path: /home/opc/.bash_profile
-  content: |
-    alias k="kubectl"
-    alias kg="kubectl get"
-    alias kgp="kubectl get pods"
-  append: true
-  # defer: true # breaks cloud-init 23.4-19.0.2.el9_5.6

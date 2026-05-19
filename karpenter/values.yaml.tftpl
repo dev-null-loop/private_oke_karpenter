@@ -4,4 +4,6 @@ settings:
   apiserverEndpoint: "${apiserver_endpoint}"
   ociVcnIpNative: ${oci_vcn_ip_native}
   ipFamilies:
-${indent(4, ip_families_yaml)}
+%{ for family in ip_families ~}
+    - ${family}
+%{ endfor ~}

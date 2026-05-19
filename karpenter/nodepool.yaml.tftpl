@@ -8,18 +8,22 @@ spec:
       expireAfter: ${expire_after}
       terminationGracePeriod: ${termination_grace_period}
       nodeClassRef:
-        group: oci.oraclecloud.com
-        kind: OCINodeClass
-        name: ${ocinodeclass_name}
+	group: oci.oraclecloud.com
+	kind: OCINodeClass
+	name: ${ocinodeclass_name}
       requirements:
-        - key: karpenter.sh/capacity-type
-          operator: In
-          values:
-${indent(12, capacity_types_yaml)}
-        - key: oci.oraclecloud.com/instance-shape
-          operator: In
-          values:
-${indent(12, instance_shapes_yaml)}
+	- key: karpenter.sh/capacity-type
+	  operator: In
+	  values:
+%{ for value in capacity_types ~}
+	    - ${value}
+%{ endfor ~}
+	- key: oci.oraclecloud.com/instance-shape
+	  operator: In
+	  values:
+%{ for value in instance_shapes ~}
+	    - ${value}
+%{ endfor ~}
   disruption:
     budgets:
       - nodes: ${budget_nodes}
