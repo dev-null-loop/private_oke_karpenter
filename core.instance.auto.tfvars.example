@@ -32,11 +32,15 @@ instances = {
     managed_cluster = "c"
     cloud_init = [
       {
-        content_type = "text/cloud-config"
-        filename     = "userdata/helm.yaml.tftpl"
-        vars = {
-          filename = "kubeconfig"
-        }
+	content_type = "text/cloud-config"
+	filename     = "userdata/helm.yaml.tftpl"
+	vars = {
+	  filename = "kubeconfig"
+	}
+      },
+      {
+	content_type = "text/cloud-config"
+	filename     = "userdata/karpenter.yaml.tftpl"
       }
     ]
   }

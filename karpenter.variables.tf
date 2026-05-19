@@ -13,6 +13,19 @@ variable "karpenter" {
     install_via_bastion      = optional(bool, true)
     bastion_instance_name    = optional(string, "bastion")
     node_pool_name           = string
+    iam = optional(object({
+      enabled                     = optional(bool, true)
+      policy_compartment_name     = optional(string)
+      node_compartment_name       = optional(string)
+      service_account             = optional(string, "karpenter")
+      dynamic_group_name          = optional(string, "kpo_nodes")
+      controller_policy_name      = optional(string, "kpo_controller")
+      cluster_join_policy_name    = optional(string, "kpo_cluster_join")
+      enable_capacity_reservation = optional(bool, false)
+      enable_compute_cluster      = optional(bool, false)
+      enable_cluster_pg           = optional(bool, false)
+      enable_defined_tags         = optional(bool, false)
+    }), {})
     nodepool = object({
       name                     = string
       cpu_limit                = number
@@ -28,15 +41,15 @@ variable "karpenter" {
     ocinodeclass = object({
       name = string
       shape_configs = optional(list(object({
-        ocpus                     = number
-        memory_in_gbs             = number
-        baseline_ocpu_utilization = optional(string)
+	ocpus                     = number
+	memory_in_gbs             = number
+	baseline_ocpu_utilization = optional(string)
       })), [])
       image_config = object({
-        image_type        = optional(string, "OKEImage")
-        image_id          = optional(string)
-        os_filter         = optional(string)
-        os_version_filter = optional(string)
+	image_type        = optional(string, "OKEImage")
+	image_id          = optional(string)
+	os_filter         = optional(string)
+	os_version_filter = optional(string)
       })
       primary_subnet_name          = string
       pod_subnet_names             = optional(list(string), [])
@@ -61,6 +74,9 @@ variable "karpenter" {
     vcn_compartment_name     = "dev"
     oci_vcn_ip_native        = true
     node_pool_name           = "n"
+    iam = {
+      enabled = true
+    }
     nodepool = {
       name            = "karpenter-general"
       cpu_limit       = 64

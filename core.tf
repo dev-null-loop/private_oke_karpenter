@@ -95,13 +95,32 @@ module "vm" {
       content_type = v.content_type
       filename     = v.filename
       content = coalesce(
-        try(v.content, null),
-        module.kubeconfig[each.value.managed_cluster].kubeconfig_instance_principal
+	try(v.content, null),
+	module.kubeconfig[each.value.managed_cluster].kubeconfig_instance_principal
       )
-      vars = {
-        filename  = try(v.vars.filename, null)
-        subnet_id = module.clusters[each.value.managed_cluster].service_lb_subnet_ids[0]
-      }
+      vars = merge(
+	try(v.vars, {}),
+	{
+	  filename                       = try(v.vars.filename, null)
+	  subnet_id                      = try(module.clusters[each.value.managed_cluster].service_lb_subnet_ids[0], null)
+	  cluster_compartment_id         = try(local.karpenter_cluster_compartment_id, null)
+	  vcn_compartment_id             = try(local.karpenter_vcn_compartment_id, null)
+	  apiserver_endpoint             = try(local.karpenter_apiserver_endpoint, null)
+	  oci_vcn_ip_native              = try(var.karpenter.oci_vcn_ip_native, null)
+	  ip_families_yaml               = try(yamlencode(var.karpenter.ip_families), null)
+	  karpenter_namespace            = try(var.karpenter.namespace, null)
+	  karpenter_chart_version        = try(var.karpenter.chart_version, null)
+	  karpenter_release_name         = try(var.karpenter.release_name, null)
+	  karpenter_values_content       = try(local.karpenter_values_content, null)
+	  karpenter_ocinodeclass_content = try(local.karpenter_ocinodeclass_content, null)
+	  karpenter_nodepool_content     = try(local.karpenter_nodepool_content, null)
+	  karpenter_repro_content        = try(local.karpenter_repro_workload_content, null)
+	}
+      )
     }
+  ]
+  depends_on = [
+    module.karpenter_controller_policy,
+    module.karpenter_cluster_join_policy,
   ]
 }

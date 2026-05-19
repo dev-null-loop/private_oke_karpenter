@@ -1,9 +1,6 @@
 locals {
   karpenter_enabled = var.karpenter.enabled
 
-  karpenter_cluster = try(module.clusters[var.karpenter.cluster_name], null)
-  karpenter_bastion = try(module.vm[var.karpenter.bastion_instance_name], null)
-
   karpenter_cluster_compartment_id = try(var.compartment_ids[var.karpenter.cluster_compartment_name], null)
   karpenter_vcn_compartment_id     = try(var.compartment_ids[var.karpenter.vcn_compartment_name], null)
 
@@ -21,33 +18,25 @@ locals {
   karpenter_ocinodeclass_secondary_vnic_configs = (
     try(var.karpenter.ocinodeclass.secondary_vnic_ip_count, null) != null ? [
       for sid in(
-        try(var.karpenter.ocinodeclass.use_same_node_and_pod_subnet, false) ?
-        [local.karpenter_primary_subnet_id] :
-        local.karpenter_pod_subnet_ids
-        ) : {
-        subnet_id = sid
-        ip_count  = var.karpenter.ocinodeclass.secondary_vnic_ip_count
+	try(var.karpenter.ocinodeclass.use_same_node_and_pod_subnet, false) ?
+	[local.karpenter_primary_subnet_id] :
+	local.karpenter_pod_subnet_ids
+	) : {
+	subnet_id = sid
+	ip_count  = var.karpenter.ocinodeclass.secondary_vnic_ip_count
       }
     ] : []
   )
-}
 
-resource "local_file" "karpenter_values" {
-  count    = local.karpenter_enabled ? 1 : 0
-  filename = "${path.module}/generated/karpenter-values.yaml"
-  content = templatefile("${path.module}/karpenter/values.yaml.tftpl", {
+  karpenter_values_content = local.karpenter_enabled ? templatefile("${path.module}/karpenter/values.yaml.tftpl", {
     cluster_compartment_id = local.karpenter_cluster_compartment_id
     vcn_compartment_id     = local.karpenter_vcn_compartment_id
     apiserver_endpoint     = local.karpenter_apiserver_endpoint
     oci_vcn_ip_native      = var.karpenter.oci_vcn_ip_native
     ip_families_yaml       = yamlencode(var.karpenter.ip_families)
-  })
-}
+  }) : null
 
-resource "local_file" "karpenter_ocinodeclass" {
-  count    = local.karpenter_enabled ? 1 : 0
-  filename = "${path.module}/generated/ocinodeclass.yaml"
-  content = templatefile("${path.module}/karpenter/ocinodeclass.yaml.tftpl", {
+  karpenter_ocinodeclass_content = local.karpenter_enabled ? templatefile("${path.module}/karpenter/ocinodeclass.yaml.tftpl", {
     name                = var.karpenter.ocinodeclass.name
     shape_configs_yaml  = yamlencode(var.karpenter.ocinodeclass.shape_configs)
     image_type          = try(var.karpenter.ocinodeclass.image_config.image_type, "OKEImage")
@@ -56,13 +45,9 @@ resource "local_file" "karpenter_ocinodeclass" {
     os_version_filter   = try(var.karpenter.ocinodeclass.image_config.os_version_filter, null)
     primary_subnet_id   = local.karpenter_primary_subnet_id
     secondary_vnic_yaml = yamlencode(local.karpenter_ocinodeclass_secondary_vnic_configs)
-  })
-}
+  }) : null
 
-resource "local_file" "karpenter_nodepool" {
-  count    = local.karpenter_enabled ? 1 : 0
-  filename = "${path.module}/generated/nodepool.yaml"
-  content = templatefile("${path.module}/karpenter/nodepool.yaml.tftpl", {
+  karpenter_nodepool_content = local.karpenter_enabled ? templatefile("${path.module}/karpenter/nodepool.yaml.tftpl", {
     name                     = var.karpenter.nodepool.name
     ocinodeclass_name        = var.karpenter.ocinodeclass.name
     cpu_limit                = var.karpenter.nodepool.cpu_limit
@@ -74,20 +59,40 @@ resource "local_file" "karpenter_nodepool" {
     consolidation_policy     = var.karpenter.nodepool.consolidation_policy
     consolidate_after        = var.karpenter.nodepool.consolidate_after
     budget_nodes             = var.karpenter.nodepool.budget_nodes
-  })
-}
+  }) : null
 
-resource "local_file" "karpenter_repro_workload" {
-  count    = local.karpenter_enabled && try(var.karpenter.repro.enabled, false) ? 1 : 0
-  filename = "${path.module}/generated/repro-workload.yaml"
-  content = templatefile("${path.module}/karpenter/repro-workload.yaml.tftpl", {
+  karpenter_repro_workload_content = local.karpenter_enabled && try(var.karpenter.repro.enabled, false) ? templatefile("${path.module}/karpenter/repro-workload.yaml.tftpl", {
     nodepool_name = var.karpenter.nodepool.name
     replicas      = var.karpenter.repro.replicas
     cpu           = var.karpenter.repro.cpu
     memory        = var.karpenter.repro.memory
     image         = var.karpenter.repro.image
     sleep_seconds = var.karpenter.repro.sleep_seconds
-  })
+  }) : null
+}
+
+resource "local_file" "karpenter_values" {
+  count    = local.karpenter_enabled ? 1 : 0
+  filename = "${path.module}/generated/karpenter-values.yaml"
+  content  = local.karpenter_values_content
+}
+
+resource "local_file" "karpenter_ocinodeclass" {
+  count    = local.karpenter_enabled ? 1 : 0
+  filename = "${path.module}/generated/ocinodeclass.yaml"
+  content  = local.karpenter_ocinodeclass_content
+}
+
+resource "local_file" "karpenter_nodepool" {
+  count    = local.karpenter_enabled ? 1 : 0
+  filename = "${path.module}/generated/nodepool.yaml"
+  content  = local.karpenter_nodepool_content
+}
+
+resource "local_file" "karpenter_repro_workload" {
+  count    = local.karpenter_enabled && try(var.karpenter.repro.enabled, false) ? 1 : 0
+  filename = "${path.module}/generated/repro-workload.yaml"
+  content  = local.karpenter_repro_workload_content
 }
 
 resource "local_file" "karpenter_collect_debug" {

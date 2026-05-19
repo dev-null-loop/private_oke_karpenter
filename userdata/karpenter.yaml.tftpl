@@ -1,0 +1,36 @@
+#cloud-config
+write_files:
+  - path: /home/opc/generated/karpenter-values.yaml
+    owner: opc:opc
+    permissions: "0644"
+    content: |
+      ${replace(chomp(karpenter_values_content), "\n", "\n      ")}
+  - path: /home/opc/generated/ocinodeclass.yaml
+    owner: opc:opc
+    permissions: "0644"
+    content: |
+      ${replace(chomp(karpenter_ocinodeclass_content), "\n", "\n      ")}
+  - path: /home/opc/generated/nodepool.yaml
+    owner: opc:opc
+    permissions: "0644"
+    content: |
+      ${replace(chomp(karpenter_nodepool_content), "\n", "\n      ")}
+%{ if karpenter_repro_content != null ~}
+  - path: /home/opc/generated/repro-workload.yaml
+    owner: opc:opc
+    permissions: "0644"
+    content: |
+      ${replace(chomp(karpenter_repro_content), "\n", "\n      ")}
+%{ endif ~}
+runcmd:
+  - mkdir -p /home/opc/generated
+  - chown -R opc:opc /home/opc/generated
+  - su - opc -c 'export KUBECONFIG=/home/opc/.kube/config && helm repo add karpenter-provider-oci https://oracle.github.io/karpenter-provider-oci/charts'
+  - su - opc -c 'export KUBECONFIG=/home/opc/.kube/config && helm repo update'
+  - su - opc -c 'export KUBECONFIG=/home/opc/.kube/config && helm upgrade --install ${karpenter_release_name} karpenter-provider-oci/karpenter --namespace ${karpenter_namespace} --create-namespace --version ${karpenter_chart_version} -f /home/opc/generated/karpenter-values.yaml'
+  - su - opc -c 'export KUBECONFIG=/home/opc/.kube/config && kubectl apply -f /home/opc/generated/ocinodeclass.yaml'
+  - su - opc -c 'export KUBECONFIG=/home/opc/.kube/config && kubectl apply -f /home/opc/generated/nodepool.yaml'
+%{ if karpenter_repro_content != null ~}
+  - su - opc -c 'export KUBECONFIG=/home/opc/.kube/config && kubectl apply -f /home/opc/generated/repro-workload.yaml'
+%{ endif ~}
+  - su - opc -c 'export KUBECONFIG=/home/opc/.kube/config && kubectl -n ${karpenter_namespace} rollout status deploy/${karpenter_release_name} --timeout=180s'
