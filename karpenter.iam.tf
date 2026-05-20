@@ -65,51 +65,51 @@ locals {
 module "karpenter_node_dynamic_group" {
   count         = local.karpenter_iam_enabled ? 1 : 0
   source        = "git@github.com:dev-null-loop/oci_identity//dynamic_group"
-  providers     = { oci = oci.home }
   tenancy_id    = var.tenancy_ocid
   name          = local.karpenter_dynamic_group_name
   description   = "Dynamic group for OCI Karpenter launched nodes"
   matching_rule = "ALL {instance.compartment.id = '${local.karpenter_node_compartment_id}'}"
+  providers     = { oci = oci.home }
 }
 
 module "karpenter_controller_policy" {
   count          = local.karpenter_iam_enabled ? 1 : 0
   source         = "git@github.com:dev-null-loop/oci_identity//policy"
-  providers      = { oci = oci.home }
   compartment_id = local.karpenter_policy_compartment_id
   name           = try(var.karpenter.iam.controller_policy_name, "kpo_controller")
   description    = "OCI Karpenter controller workload identity policy"
   statements     = local.karpenter_controller_policy_statements
+  providers      = { oci = oci.home }
 }
 
 module "karpenter_cluster_join_policy" {
   count          = local.karpenter_iam_enabled ? 1 : 0
   source         = "git@github.com:dev-null-loop/oci_identity//policy"
-  providers      = { oci = oci.home }
   compartment_id = local.karpenter_policy_compartment_id
   name           = try(var.karpenter.iam.cluster_join_policy_name, "kpo_cluster_join")
   description    = "OCI Karpenter node CLUSTER_JOIN policy"
   statements = [
     "Allow dynamic-group ${local.karpenter_dynamic_group_name} to {CLUSTER_JOIN} in compartment ${local.karpenter_policy_compartment_name}"
   ]
+  providers = { oci = oci.home }
 }
 
 module "bastion_kubeconfig_dynamic_group" {
   count         = local.bastion_kubeconfig_iam_enabled ? 1 : 0
   source        = "git@github.com:dev-null-loop/oci_identity//dynamic_group"
-  providers     = { oci = oci.home }
   tenancy_id    = var.tenancy_ocid
   name          = local.bastion_kubeconfig_dynamic_group_name
   description   = "Dynamic group for bastion instance-principal kubeconfig access"
   matching_rule = local.bastion_kubeconfig_matching_rule
+  providers     = { oci = oci.home }
 }
 
 module "bastion_kubeconfig_policy" {
   count          = local.bastion_kubeconfig_iam_enabled ? 1 : 0
   source         = "git@github.com:dev-null-loop/oci_identity//policy"
-  providers      = { oci = oci.home }
   compartment_id = local.karpenter_policy_compartment_id
   name           = local.bastion_kubeconfig_policy_name
   description    = "Policy for bastion instance-principal kubeconfig access"
   statements     = local.bastion_kubeconfig_policy_statements
+  providers      = { oci = oci.home }
 }
